@@ -1,4 +1,4 @@
-![F1](http://fadedsky-image.oss-cn-qingdao.aliyuncs.com/works_logo/2016/7/first_instruction/first_instruction-logo 250x250.png)
+![FIlogo](http://fadedsky-image.oss-cn-qingdao.aliyuncs.com/works_logo/2016/7/first_instruction/first_instruction-logo250x250.png)
 
 ##什么是first_instruction？
 ffirst_instruction是一款Minecraft服务端自动运维工具。
