@@ -115,3 +115,4 @@ while True:
         the_line=linecache.getline(cf.get("server","server-side_latest_path"),last_linage)   #扫描下一行内容
         print "[Server Info "+str(last_linage)+"]",the_line
         statistical(the_line)    #加入统计
+
