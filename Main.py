@@ -2,9 +2,7 @@
 
 import linecache
 import time
-import timeit
 import ConfigParser
-import string, os, sys
 import re
 import logging
 
@@ -23,7 +21,7 @@ logging.basicConfig(level=logging.DEBUG,    #载入日志
                 filename='fi_bin/logs/'+ str(time.strftime( ISODATEFORMAT, time.localtime()) + '.log'),
                 filemode='w')
 
-#将INFO级别或更高的日志信息打印到标准错误，并将其添加到当前的日志处理对象
+#将INFO级别或更高的 日志信息打印到标准错误
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [First instruction/%(levelname)s]: %(message)s')
