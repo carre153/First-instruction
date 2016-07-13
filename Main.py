@@ -29,6 +29,7 @@ formatter = logging.Formatter('[%(asctime)s] [First instruction/%(levelname)s]: 
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
+
 global last_linage
 last_linage = 0    #默认过去行数
 check_wait = 0
