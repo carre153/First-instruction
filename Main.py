@@ -5,6 +5,7 @@ import time
 import ConfigParser
 import re
 import logging
+import smtplib
 
 cf = ConfigParser.ConfigParser()     #载入配置文件
 cf.read('first_instruction.conf')
@@ -34,7 +35,33 @@ check_wait = 0
 
 logging.info('The First_instruction are start.')
 
-#### 加载结束 ####
+######
+
+def send_mail(title,info):   #邮件发送
+    if str(cf.get('basis','mail_send')) == 'True':
+        to='carre1@yeah.net;'
+        text='''
+        <html>
+        <body>
+        <p>
+            <h1>First-instruction 通知</h1>
+            <hr>
+            %s
+        </p>
+        </body>
+        </html>
+        '''%(info)
+        try:
+            server = smtplib.SMTP_SSL()
+            server.connect(str(cf.get('send_mail','smtp_server')), int(cf.get('send_mail','smtp_port')))
+            server.login(str(cf.get('send_mail','smtp_user')),str(cf.get('send_mail','smtp_psw')))
+            msg = ("From: %s\r\nTo: %s\r\nSubject: %s\r\nContent-Type:text/html\r\n\r\n%s"% (str(cf.get('send_mail','smtp_user')), str(cf.get('send_mail','to')),title,text)) #组装信头
+            server.sendmail(str(cf.get('send_mail','smtp_user')), to, msg)
+            logging.info('成功发送信件: \n================================================\n'+msg+'\n================================================')
+        except:
+            logging.error('不能成功地发送通知，请检查配置是否正确。')
+    else:
+        pass
 
 def statistical(info):    #统计消息
     if str(cf.get("basis","statistics")) == "True":    #判断功能是否开启
@@ -47,6 +74,7 @@ def statistical(info):    #统计消息
                 output = open('fi_bin/statistical_records/start_server.txt', 'w')    #写入
                 output.write(str(output_records))
                 output.close()
+                send_mail('First-instruction 侦测到服务器开启','First-instruction侦测到服务器被开启，请注意是否自行操作。')
             except:
                 logging.error('Log message failed.Please confirm that fi_bin/statistical_records/start_server.txt is a number')
 
@@ -59,6 +87,7 @@ def statistical(info):    #统计消息
                 output = open('fi_bin/statistical_records/close_server.txt', 'w')    #写入
                 output.write(str(output_records))
                 output.close()
+                send_mail('First-instruction侦测到服务器关闭','First-instruction侦测到服务器被关闭，请注意是否自行操作。')
             except:
                 logging.error('Log message failed.Please confirm that fi_bin/statistical_records/close_server.txt is a number')
 
@@ -101,6 +130,9 @@ def statistical(info):    #统计消息
 
     s_server_command()    #记录消息数量
 
+
+send_mail('First-instruction已启动','First-instruction已经被启动。感谢你的使用。')    #启动通知
+
 while True:
     time.sleep(1)
     file_object = open(str(cf.get("server","server-side_latest_path")))
@@ -115,4 +147,3 @@ while True:
         the_line=linecache.getline(cf.get("server","server-side_latest_path"),last_linage)   #扫描下一行内容
         print "[Server Info "+str(last_linage)+"]",the_line
         statistical(the_line)    #加入统计
-
