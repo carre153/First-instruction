@@ -1,11 +1,20 @@
 #-*- coding:utf-8 -*-
 
+import os,sys
+import thread
 import linecache
 import time
 import ConfigParser
 import re
 import logging
 import smtplib
+import urllib
+import base64
+
+import fi_library.system
+
+import fi_library
+from fi_library import *
 
 cf = ConfigParser.ConfigParser()     #载入配置文件
 cf.read('first_instruction.conf')
@@ -30,13 +39,24 @@ console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
 
-global last_linage
 last_linage = 0    #默认过去行数
 check_wait = 0
 
-logging.info('The First_instruction are start.')
-
 ######
+
+def updata():
+    if int(bool(cf.get('basis','auto_updata'))) == True:  #检查是否开启自动更新
+        updata_info = urllib.urlopen(str(cf.get('developer','check_updata_url'))).readline() #遍历
+        '''实例化消息'''
+
+        url = ''.join(re.findall('<url>(.*?)<url/>',updata_info))
+        if ''.join(re.findall('<version>(.*?)<version/>',updata_info)) != base64.b64decode(cf.get('developer','number')): #对比现版本与原版本
+            pass
+        else:
+            pass
+    else:
+        pass
+
 
 def send_mail(title,info):   #邮件发送
     if str(cf.get('basis','mail_send')) == 'True':
@@ -45,13 +65,13 @@ def send_mail(title,info):   #邮件发送
         <html>
         <body>
         <p>
-            <h1>First-instruction 通知</h1>
+            <h1>First-instruction 通知 - %s</h1>
             <hr>
             %s
         </p>
         </body>
         </html>
-        '''%(info)
+        '''%(title,info)
         try:
             server = smtplib.SMTP_SSL()
             server.connect(str(cf.get('send_mail','smtp_server')), int(cf.get('send_mail','smtp_port')))
@@ -119,32 +139,87 @@ def statistical(info):    #统计消息
         d_info = re.search(r"(?<=]: ).+?(?=$)",info,re.M)
 
         try:
-            # print "Fi Info : ",str(d_info)
             if d_info.group(0) == 'Timings Reset':
                 s_startserver()
             elif d_info.group(0) == 'Stopping server':
                 s_closeserver()
             else:
                 pass
+
+            if str(re.search(r'\sSet own game mode to\s', d_info.group(0)).group(0)):
+                pass
+            else:
+                send_mail('侦测到玩家更改模式','我们侦测到玩家正在更改模式，详细信息为：'+d_info.group(0))
         except:
             pass
 
     s_server_command()    #记录消息数量
 
+'''System'''
+def stop():
+    exit()
 
-send_mail('First-instruction已启动','First-instruction已经被启动。感谢你的使用。')    #启动通知
+def output(text):    #
+    print text
 
-while True:
+def output():    #
+    print '\n'
+
+def reboot():
+    try:
+        print '此举动会杀掉Java的任何进程，你真的要这么做吗？[1:yes,2:NO]'
+        ask = raw_input('>>>')
+        if ask == '1':
+            os.system('taskkill java.exe')
+    except:
+        print '进程销毁失败'
+
+'''============Main============'''
+
+def main(last_linage):
+    send_mail('First-instruction已启动','First-instruction已经被启动。感谢你的使用。')    #启动通知
+    updata()
+    while True:
+        time.sleep(1)
+        file_object = open(str(cf.get("server","server-side_latest_path")))   #目标文件位置
+
+        linage = len(open(str(cf.get("server","server-side_latest_path")),'rU').readlines())    #获取文件行
+
+        while linage != last_linage:   #如果新旧不吻合
+            last_linage = last_linage+1    #下一行号
+            linecache.clearcache()   #清理linecache缓存
+            the_line=linecache.getline(cf.get("server","server-side_latest_path"),last_linage)   #扫描下一行内容
+            # print "[Server Info "+str(last_linage)+"]",the_line
+            statistical(the_line)    #加入统计
+
+def shell():
+    print str(cf.get('basis','welcome_info')),' By:Fadedsky Team (http://www.fadedsky.cc)'
+    while True:
+        command = raw_input('>>> ')
+        affair(command)
+
+def affair(command):    #事务
+    commands = {
+        'stop':'stop()',    #停止
+        'output':'output()',    #打印字符串到控制台
+        'reboot':'reboot()',    #重启服务端
+    }
+    try:
+        implement = commands[str(command)]
+    except:
+        print '[Error]The command is not valid. Please check your spelling.'
+
+    try:
+        eval(implement)
+    except:
+        print '[Error]An error occurred while running'
+
+def run(last_linage):
+
+    logging.info('The First_instruction are start.')
+    thread.start_new_thread(shell, ())   #创建外壳线程
     time.sleep(1)
-    file_object = open(str(cf.get("server","server-side_latest_path")))
+    main(last_linage)    #主线程
 
-    # print "Done."
-    linage = len(open(str(cf.get("server","server-side_latest_path")),'rU').readlines())    #获取文件行数
-    # print linage
-
-    while linage != last_linage:   #如果新旧不吻合
-        last_linage = last_linage+1    #下一行号
-        linecache.clearcache()   #清理linecache缓存
-        the_line=linecache.getline(cf.get("server","server-side_latest_path"),last_linage)   #扫描下一行内容
-        print "[Server Info "+str(last_linage)+"]",the_line
-        statistical(the_line)    #加入统计
+if __name__ == '__main__':
+    run(last_linage)
